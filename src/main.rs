@@ -47,10 +47,10 @@ fn main() -> Result<(), io::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
-                .constraints([Constraint::Percentage(100)].as_ref())
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(f.size());
 
-            let gauge = Gauge::default()
+            let memory_gauge = Gauge::default()
                 .block(
                     Block::default()
                         .title("Total Memory%")
@@ -58,15 +58,37 @@ fn main() -> Result<(), io::Error> {
                 )
                 .gauge_style(Style::default().fg(Color::Green))
                 .percent(total_mem_percentage.round() as u16);
+            
 
-            let gauge_chunk = Rect {
+            let memory_gauge_chunk = Rect {
                 x: chunks[0].width.saturating_sub(20),
                 y: chunks[0].y,
                 width: 20,
                 height: chunks[0].height,
             };
 
-            f.render_widget(gauge, gauge_chunk);
+            f.render_widget(memory_gauge, memory_gauge_chunk);
+
+            let cpu_percentage = rows.iter().map(|row| row.3).sum::<f32>() / rows.len() as f32;
+
+            let cpu_gauge = Gauge::default()
+                .block(
+                    Block::default()
+                        .title("CPU%")
+                        .borders(Borders::ALL),
+                )
+                .gauge_style(Style::default().fg(Color::Red))
+                .percent(cpu_percentage.round() as u16);
+
+            let cpu_gauge_chunk = Rect {
+                x: chunks[1].width.saturating_sub(20),
+                y: chunks[1].y,
+                width: 20,
+                height: chunks[1].height,
+            };
+
+            f.render_widget(cpu_gauge, cpu_gauge_chunk);
+
 
             let mut process_list = String::new();
             process_list.push_str(&format!("{:<10} {:<15} {:<15} {:<10} {:<15} {:<10}\n", "PID", "CPU Time", "Memory%", "CPU%", "Process Name", "Status"));
