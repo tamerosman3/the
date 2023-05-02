@@ -12,7 +12,7 @@ use tui::{
 use psutil::process::Process;
 use tui::widgets::Wrap;
 use tui::text::Text;
-
+use tui::widgets::{Cell, Row, Table};
 use std::thread::sleep;
 
 // Add this function to your code
@@ -126,14 +126,41 @@ fn main() -> Result<(), io::Error> {
                 process_list.push_str(&format!("{:<10} {:<15} {:<15.2} {:<10.2} {:<15} {:<10}\n", row.0, row.1, row.2, row.3, row.4, format!("{:?}", row.5)));
             }
             
-            let process_text = Text::from(process_list);
-            let paragraph = Paragraph::new(process_text)
-             .block(Block::default().borders(Borders::NONE))
-             .alignment(Alignment::Left)
-             .wrap(Wrap { trim: true });
-
-
-            f.render_widget(paragraph, chunks[0]);
+            let rows = rows
+            .iter()
+            .map(|row| {
+                Row::new(vec![
+                    Cell::from(format!("{:<10}", row.0)),
+                    Cell::from(format!("{:<15}", row.1)),
+                    Cell::from(format!("{:<15.2}", row.2)),
+                    Cell::from(format!("{:<10.2}", row.3)),
+                    Cell::from(format!("{:<15}", row.4)),
+                    Cell::from(format!("{:<10}", format!("{:?}", row.5))),
+                ])
+            })
+            .collect::<Vec<_>>();
+        
+        let header = Row::new(vec![
+            Cell::from("PID").style(Style::default().add_modifier(Modifier::BOLD)),
+            Cell::from("CPU Time").style(Style::default().add_modifier(Modifier::BOLD)),
+            Cell::from("Memory%").style(Style::default().add_modifier(Modifier::BOLD)),
+            Cell::from("CPU%").style(Style::default().add_modifier(Modifier::BOLD)),
+            Cell::from("Process Name").style(Style::default().add_modifier(Modifier::BOLD)),
+            Cell::from("Status").style(Style::default().add_modifier(Modifier::BOLD)),
+        ]);
+        
+        let table = Table::new(std::iter::once(header).chain(rows))
+            .block(Block::default().borders(Borders::ALL).title("Process Table"))
+            .widths(&[
+                Constraint::Percentage(10),
+                Constraint::Percentage(20),
+                Constraint::Percentage(15),
+                Constraint::Percentage(10),
+                Constraint::Percentage(25),
+                Constraint::Percentage(20),
+            ]);
+        
+        f.render_widget(table, chunks[0]);
         
          })?;
 
