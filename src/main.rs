@@ -13,6 +13,32 @@ use psutil::process::Process;
 use tui::widgets::Wrap;
 use tui::text::Text;
 
+use std::thread::sleep;
+
+// Add this function to your code
+fn get_process_data() -> Vec<(u32, u128, f32, f32, String, psutil::process::Status)> {
+    let processes = psutil::process::processes().unwrap();
+    let mut rows = vec![];
+
+    // Get the data for each process
+    for process in processes {
+        let pid = process.expect("Failed to get process").pid();
+        let mut proc = Process::new(pid).unwrap();
+        let cpu_time = proc.cpu_times().unwrap();
+        let total_time = cpu_time.user().as_nanos() + cpu_time.system().as_nanos() +
+            cpu_time.children_user().as_nanos() + cpu_time.children_system().as_nanos();
+        let mem_con = proc.memory_percent().unwrap();
+        let cpu_con = proc.cpu_percent().unwrap();
+        let process_name = proc.name().unwrap();
+        let status = proc.status().unwrap();
+
+        // Add the data for the current process to the rows vector
+        rows.push((pid, total_time, mem_con, cpu_con, process_name, status));
+    }
+
+    rows
+}
+
 
 fn main() -> Result<(), io::Error> {
     let stdout = io::stdout();
@@ -40,14 +66,18 @@ fn main() -> Result<(), io::Error> {
         rows.push((pid, total_time, mem_con, cpu_con, process_name, status));
     }
 
-    let total_mem_percentage = rows.iter().map(|row| row.2).sum::<f32>() / rows.len() as f32;
 
     loop {
+        
+            let rows = get_process_data();
+            let total_mem_percentage = rows.iter().map(|row| row.2).sum::<f32>() / rows.len() as f32;    
+    
+
         terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .constraints([Constraint::Percentage(100), Constraint::Percentage(100)].as_ref())
                 .split(f.size());
 
             let memory_gauge = Gauge::default()
@@ -114,8 +144,14 @@ fn main() -> Result<(), io::Error> {
                 }
             }
         }
+
+        sleep(Duration::from_secs(2));
+
     }
     
     terminal.clear()?;
     Ok(())
 }
+
+
+
