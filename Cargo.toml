@@ -9,4 +9,6 @@ edition = "2021"
 psutil = "3.2.2"
 tui = "0.19"
 crossterm = "0.25"
+procfs = "0.9"
+sysinfo = "0.17.5"
 
