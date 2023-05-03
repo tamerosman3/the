@@ -46,8 +46,10 @@ fn main() -> Result<(), io::Error> {
         rows.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         let total_cpu_usage = system.get_global_processor_info().get_cpu_usage();
         let total_cpu_percentage = total_cpu_usage as f64;
-        let used_memory_sum = rows.iter().map(|row| row.2).sum::<f64>();
-        let total_mem_percentage = (used_memory_sum / system.get_total_memory() as f64) * 100.0;
+        let used_memory = system.get_used_memory() as f64;
+        let total_memory = system.get_total_memory() as f64;
+        let total_mem_percentage = (used_memory / total_memory) * 100.0;
+
 
 
         terminal.draw(|f| {
