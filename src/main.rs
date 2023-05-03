@@ -11,6 +11,7 @@ use tui::{
 };
 use std::thread::sleep;
 use sysinfo::ProcessorExt;
+use std::io::Write;
 
 fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String, sysinfo::ProcessStatus)> {
     let mut rows = vec![];
@@ -126,9 +127,29 @@ fn main() -> Result<(), io::Error> {
             if let Event::Key(key_event) = read()? {
                 if key_event.code == KeyCode::Char('q') || key_event.code == KeyCode::Esc {
                     break;
+                } else if key_event.code == KeyCode::Char('k') { // Add a new branch for the 'k' key
+                    print!("Enter PID to kill: ");
+                    io::stdout().flush()?;
+                    let mut pid_input = String::new();
+                    io::stdin().read_line(&mut pid_input)?;
+                    if let Ok(pid) = pid_input.trim().parse::<i32>() {
+                        if let Some(process) = system.get_process(pid) {
+                            let result = process.kill(sysinfo::Signal::Kill);
+                            if result {
+                                println!("Process with PID {} killed.", pid);
+                            } else {
+                                println!("Failed to kill process with PID {}.", pid);
+                            }
+                        } else {
+                            println!("No process found with PID {}.", pid);
+                        }
+                    } else {
+                        println!("Invalid PID.");
+                    }
                 }
             }
         }
+
 
         sleep(Duration::from_secs(2));
     }
