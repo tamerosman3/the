@@ -17,11 +17,11 @@ fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String,
 
     system.refresh_all();
 
-    let num_processors = system.get_processors().len() as f32;
+    //let num_processors = system.get_processors().len() as f32;
 
 
     for (pid, process) in system.get_processes() {
-        let cpu_percent = process.cpu_usage() / num_processors;;
+        let cpu_percent = process.cpu_usage();
         let mem_percent =
             (process.memory() as f64 / system.get_total_memory() as f64) * 100.0;
         let process_name = process.name().to_string();
@@ -42,8 +42,8 @@ fn main() -> Result<(), io::Error> {
     terminal.clear()?;
 
     loop {
-        let rows = get_process_data(&mut system);
-
+        let mut rows = get_process_data(&mut system);
+        rows.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         let total_cpu_usage = system.get_global_processor_info().get_cpu_usage();
         let total_cpu_percentage = total_cpu_usage as f64;
         let total_mem_percentage =
