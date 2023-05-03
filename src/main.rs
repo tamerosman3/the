@@ -10,6 +10,7 @@ use tui::{
     Terminal,
 };
 use std::thread::sleep;
+use sysinfo::ProcessorExt;
 
 fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String, sysinfo::ProcessStatus)> {
     let mut rows = vec![];
@@ -39,9 +40,10 @@ fn main() -> Result<(), io::Error> {
 
     loop {
         let rows = get_process_data(&mut system);
-        let total_cpu_percentage =
-    rows.iter().map(|row| row.1 as f64).sum::<f64>() / rows.len() as f64;
-let total_mem_percentage =
+
+        let total_cpu_usage = system.get_global_processor_info().get_cpu_usage();
+        let total_cpu_percentage = total_cpu_usage as f64;
+        let total_mem_percentage =
     rows.iter().map(|row| row.2).sum::<f64>() / rows.len() as f64;
 
 
