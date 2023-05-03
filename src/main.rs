@@ -83,18 +83,18 @@ fn main() -> Result<(), io::Error> {
 
             f.render_widget(cpu_gauge, chunks[2]);
 
-            let rows = rows.iter()               
-             .map(|row| {
-                    Row::new(vec![
-                        Cell::from(format!("{:<10}", row.0)),
-                        Cell::from(format!("{:<15}", row.1)),
-                        Cell::from(format!("{:<15.2}", row.2)),
-                        Cell::from(format!("{:<10.2}", row.3)),
-                        Cell::from(format!("{:<10}", format!("{:?}", row.4))),
-
-                    ])
-                })
-                .collect::<Vec<_>>();
+            let rows = rows.iter()
+            .map(|row| {
+                Row::new(vec![
+                    Cell::from(format!("{:<10}", row.0)),
+                    // Format CPU% with only two decimal places
+                    Cell::from(format!("{:<15.2}", row.1)),
+                    Cell::from(format!("{:<15.2}", row.2)),
+                    Cell::from(format!("{:<25}", row.3)),
+                    Cell::from(format!("{:<10}", format!("{:?}", row.4))),
+                ])
+            })
+            .collect::<Vec<_>>();
 
             let header = Row::new(vec![
                 Cell::from("PID").style(Style::default().add_modifier(Modifier::BOLD)),
@@ -105,15 +105,14 @@ fn main() -> Result<(), io::Error> {
             ]);
 
             let table = Table::new(std::iter::once(header).chain(rows))
-                .block(Block::default().borders(Borders::ALL).title("Process Table"))
-                .widths(&[
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(20),
-                    Constraint::Percentage(15),
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(25),
-                    Constraint::Percentage(20),
-                ]);
+            .block(Block::default().borders(Borders::ALL).title("Process Table"))
+            .widths(&[
+                Constraint::Percentage(10),
+                Constraint::Percentage(15),
+                Constraint::Percentage(15),
+                Constraint::Percentage(45),
+                Constraint::Percentage(15),
+            ]);
 
             f.render_widget(table, chunks[0]);
         })?;
