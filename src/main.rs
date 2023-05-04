@@ -12,6 +12,9 @@ use tui::{
 use std::thread::sleep;
 use sysinfo::ProcessorExt;
 use std::io::Write;
+use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, enable_raw_mode, disable_raw_mode};
+use crossterm::execute;
+use tui::Frame;
 
 fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String, sysinfo::ProcessStatus)> {
     let mut rows = vec![];
@@ -35,10 +38,18 @@ fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String,
 }
 
 fn main() -> Result<(), io::Error> {
-    let stdout = io::stdout();
+    let mut stdout = io::stdout();
+
+    // Switch to the alternate screen and enable raw mode
+    execute!(stdout, EnterAlternateScreen)?;
+    enable_raw_mode()?;
+
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     let mut system = System::new_all();
+
+    let mut command_buffer = String::new();
+
 
     terminal.clear()?;
 
@@ -50,10 +61,9 @@ fn main() -> Result<(), io::Error> {
         let used_memory = system.get_used_memory() as f64;
         let total_memory = system.get_total_memory() as f64;
         let total_mem_percentage = (used_memory / total_memory) * 100.0;
+        let draw_ui = |f: &mut Frame<CrosstermBackend<io::Stdout>>, prompt_text: &str| {
 
 
-
-        terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
@@ -66,8 +76,7 @@ fn main() -> Result<(), io::Error> {
                 )
                 .split(f.size());
 
-            // Add the prompt at the top
-            let prompt_text = format!("Press 'k' to kill a process. Press 'q' or 'Esc' to quit.");
+            
             let prompt = tui::widgets::Paragraph::new(prompt_text).block(Block::default().borders(Borders::ALL).title("Commands"));
             f.render_widget(prompt, chunks[0]);
 
@@ -138,38 +147,77 @@ fn main() -> Result<(), io::Error> {
             ]);
 
             f.render_widget(table, chunks[0]);
-        })?;
+        };
 
-        if poll(Duration::from_millis(100))? {
+        let prompt_text = if command_buffer.starts_with('k') {
+            format!("Enter PID to kill: {}", &command_buffer[1..])
+        } else {
+            format!("Press 'k' to kill a process. Press 'q' or 'Esc' to quit. {}", command_buffer)
+        };
+        terminal.draw(|f| draw_ui(f, &prompt_text))?; // Call draw_ui here
+        let mut updated = false;
+
+
+        if poll(Duration::from_millis(10))? {
             if let Event::Key(key_event) = read()? {
-                if key_event.code == KeyCode::Char('q') || key_event.code == KeyCode::Esc {
-                    break;
-                } else if key_event.code == KeyCode::Char('k') { // Add a new branch for the 'k' key
-                    print!("Enter PID to kill: ");
-                    io::stdout().flush()?;
-                    let mut pid_input = String::new();
-                    io::stdin().read_line(&mut pid_input)?;
-                    if let Ok(pid) = pid_input.trim().parse::<i32>() {
-                        if let Some(process) = system.get_process(pid) {
-                            let result = process.kill(sysinfo::Signal::Kill);
-                            if result {
-                                println!("Process with PID {} killed.", pid);
-                            } else {
-                                println!("Failed to kill process with PID {}.", pid);
-                            }
-                        } else {
-                            println!("No process found with PID {}.", pid);
-                        }
-                    } else {
-                        println!("Invalid PID.");
+                updated = true;
+                match key_event.code {
+                    KeyCode::Char('k') => {
+                        command_buffer.push('k');
                     }
+                    KeyCode::Char('q') => {
+                        command_buffer.push('q');
+                    }
+                    KeyCode::Char(c) if command_buffer.starts_with('k') => {
+                        command_buffer.push(c);
+                    }
+                    KeyCode::Enter => {
+                        if command_buffer.starts_with('k') {
+                            // Add the process killing logic here
+                            if let Ok(pid) = command_buffer[1..].parse::<sysinfo::Pid>() {
+                                if let Some(process) = system.get_process(pid) {
+                                    process.kill(sysinfo::Signal::Kill);
+                                    command_buffer.clear();
+                                } else {
+                                    command_buffer = format!("Failed to kill process with PID: {}", pid);
+                                }
+                            } else {
+                                command_buffer = format!("Invalid PID: {}", &command_buffer[1..]);
+                            }
+                        } else if command_buffer.starts_with('q') {
+                            break;
+                        } else {
+                            command_buffer.clear();
+                        }
+                    }
+                    KeyCode::Esc => {
+                        break;
+                    }
+                    KeyCode::Backspace if !command_buffer.is_empty() => {
+                        command_buffer.pop();
+                    }
+                    _ => {}
                 }
             }
         }
+        if !updated {
+            system.refresh_all();
+            sleep(Duration::from_millis(1000));
+        } else {
+            // 3. Call draw_ui after handling input events
+            let prompt_text = if command_buffer.starts_with('k') {
+                "Enter PID to kill.".to_string()
+            } else {
+                format!("Press 'k' to kill a process. Press 'q' or 'Esc' to quit. Input: {}", command_buffer)
+            };
+            terminal.draw(|f| draw_ui(f, &prompt_text))?; // Call draw_ui here
+        }
 
-
-        sleep(Duration::from_secs(2));
     }
+
+// Disable raw mode and leave the alternate screen
+disable_raw_mode()?;
+execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
 
     terminal.clear()?;
     Ok(())
