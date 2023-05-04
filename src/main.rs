@@ -55,6 +55,23 @@ fn main() -> Result<(), io::Error> {
 
         terminal.draw(|f| {
             let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(1)
+                .constraints(
+                    [
+                        Constraint::Length(3), // Add an extra constraint for the prompt
+                        Constraint::Percentage(100),
+                    ]
+                    .as_ref(),
+                )
+                .split(f.size());
+
+            // Add the prompt at the top
+            let prompt_text = format!("Press 'k' to kill a process. Press 'q' or 'Esc' to quit.");
+            let prompt = tui::widgets::Paragraph::new(prompt_text).block(Block::default().borders(Borders::ALL).title("Commands"));
+            f.render_widget(prompt, chunks[0]);
+
+            let chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(2)
                 .constraints(
@@ -65,7 +82,7 @@ fn main() -> Result<(), io::Error> {
                     ]
                     .as_ref(),
                 )
-                .split(f.size());
+                .split(chunks[1]);
 
             let memory_gauge = Gauge::default()
                 .block(
