@@ -61,6 +61,8 @@ fn main() -> Result<(), io::Error> {
         let used_memory = system.get_used_memory() as f64;
         let total_memory = system.get_total_memory() as f64;
         let total_mem_percentage = (used_memory / total_memory) * 100.0;
+        
+        
         let draw_ui = |f: &mut Frame<CrosstermBackend<io::Stdout>>, prompt_text: &str| {
 
 
@@ -149,10 +151,13 @@ fn main() -> Result<(), io::Error> {
             f.render_widget(table, chunks[0]);
         };
 
+
+
+
         let prompt_text = if command_buffer.starts_with('k') {
             format!("Enter PID to kill: {}", &command_buffer[1..])
         } else {
-            format!("Press 'k' to kill a process. Press 'q' or 'Esc' to quit. {}", command_buffer)
+            format!("Press 'k' to kill a process. Press 'Esc' to quit. {}", command_buffer)
         };
         terminal.draw(|f| draw_ui(f, &prompt_text))?; // Call draw_ui here
         let mut updated = false;
@@ -208,7 +213,7 @@ fn main() -> Result<(), io::Error> {
             let prompt_text = if command_buffer.starts_with('k') {
                 "Enter PID to kill.".to_string()
             } else {
-                format!("Press 'k' to kill a process. Press 'q' or 'Esc' to quit. Input: {}", command_buffer)
+                format!("Press 'k' to kill a process. Press 'Esc' to quit. {}", command_buffer)
             };
             terminal.draw(|f| draw_ui(f, &prompt_text))?; // Call draw_ui here
         }
