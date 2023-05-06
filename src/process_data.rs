@@ -1,5 +1,4 @@
-use sysinfo::{ProcessExt, System, SystemExt};
-use sysinfo::ProcessorExt;
+use sysinfo::{ProcessExt, SystemExt};
 
 
 pub fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String, sysinfo::ProcessStatus)> {
