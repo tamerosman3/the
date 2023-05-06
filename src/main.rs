@@ -15,27 +15,10 @@ use std::io::Write;
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, enable_raw_mode, disable_raw_mode};
 use crossterm::execute;
 use tui::Frame;
-
-fn get_process_data(system: &mut sysinfo::System) -> Vec<(i32, f32, f64, String, sysinfo::ProcessStatus)> {
-    let mut rows = vec![];
-
-    system.refresh_all();
-
-    let num_processors = system.get_processors().len() as f32;
+mod process_data; // Import the process_data module
+use process_data::get_process_data;
 
 
-    for (pid, process) in system.get_processes() {
-        let cpu_percent = process.cpu_usage() / num_processors;
-        let mem_percent =
-            (process.memory() as f64 / system.get_total_memory() as f64) * 100.0;
-        let process_name = process.name().to_string();
-        let status = process.status();
-
-        rows.push((*pid,  cpu_percent, mem_percent, process_name, status));
-    }
-
-    rows
-}
 
 fn main() -> Result<(), io::Error> {
     let mut stdout = io::stdout();
@@ -175,7 +158,7 @@ fn main() -> Result<(), io::Error> {
                     }
                     KeyCode::Char(c) if command_buffer.starts_with('k') => {
                         command_buffer.push(c);
-                    }
+                    }                    
                     KeyCode::Enter => {
                         if command_buffer.starts_with('k') {
                             // Add the process killing logic here
