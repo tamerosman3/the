@@ -16,13 +16,21 @@ use sysinfo::System;
 use sysinfo::SystemExt;
 use sysinfo::ProcessorExt;
 use sysinfo::ProcessExt;
-
-
-
-
+use std::process::Command;
+use std::env;
 
 
 fn main() -> Result<(), io::Error> {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 && args[1] == "tree" {
+        // Run another program
+        let output = Command::new("./tes").output()?;
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+    } else {
+    
+    
+    
     let mut stdout = io::stdout();
 
     // Switch to the alternate screen and enable raw mode
@@ -38,10 +46,21 @@ fn main() -> Result<(), io::Error> {
     let selected_row = 0;
 
     terminal.clear()?;
-
+    let mut f = 1;
     loop {
         let mut rows = get_process_data(&mut system);
-        rows.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        
+        if f == 1{
+            rows.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        } else if f == 0{
+            rows.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        }else if f == 2 {
+            rows.sort_unstable_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
+        }else if f == 3{ 
+            rows.sort_unstable_by(|a, b| b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal));
+        } else{
+            rows.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        }
         let total_cpu_usage = system.get_global_processor_info().get_cpu_usage();
         let total_cpu_percentage = total_cpu_usage as f64;
         let used_memory = system.get_used_memory() as f64;
@@ -50,16 +69,15 @@ fn main() -> Result<(), io::Error> {
     
         let prompt_text = if command_buffer.starts_with('k') {
             format!("Enter PID to kill: {}", &command_buffer[1..])
+        } else if command_buffer.starts_with('s') {
+            format!("Enter the initial to sort by: {}", &command_buffer[1..])
         } else {
-            format!("Press 'k' to kill a process. Press 'Esc' to quit. {}", command_buffer)
+            format!("Press 'k' to kill a process. Press 's' to sort the table by a column. Press 'Esc' to quit. {}", command_buffer)
         };
         let selected_row = 0;
-    
-
         terminal.draw(|f| ui::draw_ui(f, &prompt_text, &rows, selected_row, total_cpu_percentage, total_mem_percentage))?; // Call draw_ui here
         let mut updated = false;
-
-
+        
         if poll(Duration::from_millis(10))? {
             if let Event::Key(key_event) = read()? {
                 updated = true;
@@ -70,9 +88,19 @@ fn main() -> Result<(), io::Error> {
                     KeyCode::Char('q') => {
                         command_buffer.push('q');
                     }
-                    KeyCode::Char(c) if command_buffer.starts_with('k') => {
-                        command_buffer.push(c);
-                    }                    
+                    KeyCode::Char('c') if command_buffer.starts_with('k') => {
+                        command_buffer.push('c');
+                    }
+                    KeyCode::Char('s') => {
+                        command_buffer.push('s');
+                    }
+
+                    KeyCode::Char('c') if command_buffer.starts_with('s') => {
+                        command_buffer.push('c');  }
+                    KeyCode::Char('p') if command_buffer.starts_with('s') => {
+                        command_buffer.push('p');  }
+                    KeyCode::Char('m') if command_buffer.starts_with('s') => {
+                        command_buffer.push('m');  }                      
                     KeyCode::Enter => {
                         if command_buffer.starts_with('k') {
                             // Add the process killing logic here
@@ -88,9 +116,16 @@ fn main() -> Result<(), io::Error> {
                             }
                         } else if command_buffer.starts_with('q') {
                             break;
-                        } else {
+                        } else if command_buffer.len() >= 2 && &command_buffer[0..2] == "sp" {
+                            f = 0;
+                        } else if command_buffer.len() >= 2 && &command_buffer[0..2] == "sc" {
+                            f=1;
+                        } else if command_buffer.len() >= 2 && &command_buffer[0..2] == "sm"  {
+                            f=2;
+                        } 
+                        else {
                             command_buffer.clear();
-                        }
+                        } 
                     }
                     KeyCode::Esc => {
                         break;
@@ -123,6 +158,6 @@ disable_raw_mode()?;
 execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
 
     terminal.clear()?;
+}
     Ok(())
 }
-

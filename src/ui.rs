@@ -96,3 +96,5 @@ pub fn draw_ui(f: &mut Frame<CrosstermBackend<io::Stdout>>, prompt_text: &str, r
 
     f.render_widget(table, chunks[0]);
 }
+
+

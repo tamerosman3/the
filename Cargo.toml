@@ -10,4 +10,4 @@ psutil = "3.2.2"
 tui = "0.19"
 crossterm = "0.25"
 sysinfo = "0.17.5"
-
+indextree = "4.3.1"
