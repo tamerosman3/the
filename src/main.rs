@@ -72,7 +72,7 @@ fn main() -> Result<(), io::Error> {
         } else if command_buffer.starts_with('s') {
             format!("Enter the initial to sort by: {}", &command_buffer[1..])
         } else {
-            format!("Press 'k' to kill a process. Press 's' to sort the table by a column. Press 'Esc' to quit. {}", command_buffer)
+            format!("  Press 'k' to kill a process. Press 'Esc' to quit. Press 's' to sort the table by a column.\n  Use 'sp' to sort acoording to PID, or 'sm' to sort according to memory usage, sc to sort according to cpu usage, or sn to sort according to the process name.\n  {}", command_buffer)
         };
         let selected_row = 0;
         terminal.draw(|f| ui::draw_ui(f, &prompt_text, &rows, selected_row, total_cpu_percentage, total_mem_percentage))?; // Call draw_ui here
@@ -100,7 +100,9 @@ fn main() -> Result<(), io::Error> {
                     KeyCode::Char('p') if command_buffer.starts_with('s') => {
                         command_buffer.push('p');  }
                     KeyCode::Char('m') if command_buffer.starts_with('s') => {
-                        command_buffer.push('m');  }                      
+                        command_buffer.push('m');  }
+                    KeyCode::Char('n') if command_buffer.starts_with('s') => {
+                        command_buffer.push('n');  }                              
                     KeyCode::Enter => {
                         if command_buffer.starts_with('k') {
                             // Add the process killing logic here
@@ -122,7 +124,9 @@ fn main() -> Result<(), io::Error> {
                             f=1;
                         } else if command_buffer.len() >= 2 && &command_buffer[0..2] == "sm"  {
                             f=2;
-                        } 
+                        } else if command_buffer.len() >= 2 && &command_buffer[0..2] == "sn"  {
+                            f=3;
+                        }
                         else {
                             command_buffer.clear();
                         } 
