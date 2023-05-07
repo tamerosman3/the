@@ -17,7 +17,7 @@ pub fn draw_ui(f: &mut Frame<CrosstermBackend<io::Stdout>>, prompt_text: &str, r
         .margin(1)
         .constraints(
             [
-                Constraint::Length(4), // Add an extra constraint for the prompt
+                Constraint::Length(5), // Add an extra constraint for the prompt
                 Constraint::Percentage(100),
             ]
             .as_ref(),
